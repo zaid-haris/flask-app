@@ -1,0 +1,57 @@
+import React, { useState, useEffect } from 'react';
+
+function BlogList() {
+  // State to store the list of blogs from the API
+  const [blogs, setBlogs] = useState([]);
+  // State to handle any loading or error states
+  const [error, setError] = useState(null);
+
+  // useEffect runs after the component mounts to fetch the data
+  useEffect(() => {
+    // We define an async function inside useEffect to use await
+    const fetchBlogs = async () => {
+      try {
+        // Fetch data from your Flask API endpoint
+        const response = await fetch('http://127.0.0.1:5000/blogs');
+
+        if (!response.ok) {
+          // If the server response is not OK, throw an error
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        // Parse the JSON response into a JavaScript object
+        const data = await response.json();
+        // Update the component's state with the fetched blogs
+        setBlogs(data);
+
+      } catch (e) {
+        // If an error occurs during the fetch, update the error state
+        console.error("Fetch error:", e.message);
+        setError(e.message);
+      }
+    };
+
+    fetchBlogs(); // Call the function to execute the fetch
+  }, []); // The empty array [] ensures this effect runs only once
+
+  // Conditional rendering for the error state
+  if (error) {
+    return <div>Error fetching blogs: {error}</div>;
+  }
+
+  // Render the list of blogs
+  return (
+    <div>
+      <h1>Latest Blogs 📝</h1>
+      {blogs.map(blog => (
+        <article key={blog.id} style={{ borderBottom: '1px solid #ccc', marginBottom: '1rem', paddingBottom: '1rem' }}>
+          <h2>{blog.title}</h2>
+          <p>{blog.content}</p>
+          {/* You can add more details here */}
+        </article>
+      ))}
+    </div>
+  );
+}
+
+export default BlogList;
