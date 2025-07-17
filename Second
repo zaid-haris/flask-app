@@ -1,0 +1,72 @@
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import BlogApi from "../../api/Blogs";
+import "./CreateBlog.css";
+
+const CreateBlog = () => {
+  const [formData, setFormData] = useState({
+    title: "",
+    author: "",
+    content: "", // renamed from body to match backend field
+  });
+
+  const navigate = useNavigate();
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+
+    BlogApi.createBlog(formData)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to create blog");
+        return res.json();
+      })
+      .then(() => {
+        navigate("/BlogManagement");
+      })
+      .catch((err) => {
+        alert(err.message);
+      });
+  };
+
+  return (
+    <div className="create-blog-container">
+      <h2>Create New Blog</h2>
+      <form onSubmit={handleSubmit} className="create-blog-form">
+        <input
+          type="text"
+          name="title"
+          placeholder="Blog Title"
+          value={formData.title}
+          onChange={handleChange}
+          required
+        />
+        <input
+          type="text"
+          name="author"
+          placeholder="Author"
+          value={formData.author}
+          onChange={handleChange}
+          required
+        />
+        <textarea
+          name="content"
+          placeholder="Blog Body"
+          value={formData.content}
+          onChange={handleChange}
+          required
+        ></textarea>
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+  );
+};
+
+export default CreateBlog;
