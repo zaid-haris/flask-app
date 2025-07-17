@@ -1,0 +1,89 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import BlogApi from "../../api/Blogs";
+import "./BlogManagement.css";
+
+const BlogManagement = () => {
+  const [blogs, setBlogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  const fetchBlogs = () => {
+    setLoading(true);
+    BlogApi.getBlogs()
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch blogs");
+        return res.json();
+      })
+      .then((data) => {
+        setBlogs(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err.message);
+        setLoading(false);
+      });
+  };
+
+  const handleDelete = (id) => {
+    BlogApi.deleteBlog(id)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to delete blog");
+        return res.json();
+      })
+      .then(() => {
+        setBlogs(blogs.filter((blog) => blog.id !== id));
+      })
+      .catch((err) => {
+        alert(err.message);
+      });
+  };
+
+  if (loading) {
+    return <p>Loading blogs...</p>;
+  }
+
+  if (error) {
+    return <p>Error: {error}</p>;
+  }
+
+  return (
+    <div className="blog-management-container">
+      <button className="create-button btn liquid" onClick={() => navigate("/CreateBlog")}>
+        <span>Create New Blog</span>
+      </button>
+      <h2>Existing Blogs</h2>
+      <table className="blogs-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {blogs.map((blog) => (
+            <tr key={blog.id}>
+              <td>{blog.title}</td>
+              <td>
+                <button
+                  className="delete-button"
+                  onClick={() => handleDelete(blog.id)}
+                >
+                  Delete Blog
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
+export default BlogManagement;
