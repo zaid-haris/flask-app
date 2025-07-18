@@ -1,0 +1,129 @@
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import "./BlogDetail.css";
+
+function BlogDetail() {
+  const { id } = useParams();
+  const [blog, setBlog] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // --- updated ---
+  // The 'comments' state will now hold comment objects, not just text.
+  const [comments, setComments] = useState([]);
+  const [commentText, setCommentText] = useState("");
+
+  // --- new ---
+  // State for handling the comment submission form
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [commentError, setCommentError] = useState(null);
+
+  useEffect(() => {
+    const fetchSingleBlog = async () => {
+      try {
+        const response = await fetch(`http://127.0.0.1:5000/blogs/${id}`);
+        if (!response.ok) {
+          throw new Error(`Blog not found or server error.`);
+        }
+        const data = await response.json();
+        setBlog(data);
+        // --- new ---
+        // Load the comments that came with the blog data
+        if (data.comments) {
+          setComments(data.comments);
+        }
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSingleBlog();
+  }, [id]);
+
+  // --- updated ---
+  // This function now saves the comment to the database
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!commentText.trim()) return; // Don't submit empty comments
+
+    setIsSubmitting(true);
+    setCommentError(null);
+
+    // Note: You must get the authentication token from your app's state
+    // or localStorage. This is just an example.
+    const token = localStorage.getItem("token");
+
+    try {
+      const response = await fetch(`http://127.0.0.1:5000/blogs/${id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          // The backend needs this token to identify the logged-in user
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ content: commentText }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to post comment.");
+      }
+
+      const newComment = await response.json();
+
+      // Add the new comment to the top of the list
+      setComments((prevComments) => [newComment, ...prevComments]);
+      setCommentText(""); // Clear the textarea
+    } catch (err) {
+      setCommentError(err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (loading) return <p>Loading blog post...</p>;
+  if (error) return <p>Error: {error}</p>;
+  if (!blog) return <p>Blog not found</p>;
+
+  return (
+    <div className="blog-detail">
+      <h2>{blog.title}</h2>
+      <p>By {blog.author}</p>
+      <span>{blog.content}</span>
+
+      <div className="comments-section">
+        <h3>Comments</h3>
+        <form onSubmit={handleCommentSubmit} className="comment-form">
+          <textarea
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+            placeholder="Add your comment..."
+            required
+          ></textarea>
+          {/* Disable button while submitting */}
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Posting..." : "Post Comment"}
+          </button>
+          {/* Display any error related to comment submission */}
+          {commentError && <p className="error-message">{commentError}</p>}
+        </form>
+
+        <div className="comment-list">
+          {/* --- updated --- */}
+          {/* Map over the array of comment objects */}
+          {comments.map((comment) => (
+            <div key={comment.id} className="comment-item">
+              <strong>{comment.author}:</strong>
+              <p>{comment.content}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default BlogDetail;
+
+
