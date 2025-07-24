@@ -1,0 +1,32 @@
+const handleSubmit = (e) => {
+  e.preventDefault();
+
+  // 1. Create a new FormData object
+  const data = new FormData();
+
+  // 2. Append all the form fields to it
+  data.append("title", formData.title);
+  data.append("author", formData.author);
+  data.append("content", formData.content);
+  data.append("image", formData.image); // The 'image' key must match the backend
+
+  // 3. Pass the single FormData object to your API call
+  BlogApi.createBlog(data) // Assumes BlogApi.createBlog is updated to take one argument
+    .then((res) => {
+      // The flag/error logic can be handled here now
+      if (res.flag) {
+        alert(`Success! You found a flag: ${res.flag}`);
+      }
+      if (!res.ok && res.error) {
+         throw new Error(res.error);
+      }
+      return res.json();
+    })
+    .then(() => {
+      navigate("/BlogManagement");
+    })
+    .catch((err) => {
+      // This will now catch errors from the server response
+      alert(err.message);
+    });
+};
