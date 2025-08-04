@@ -1,0 +1,201 @@
+import React, { useState, useEffect } from "react";
+import BalanceCard from "../../components/UserCards/BalanceCard";
+import TransactionCard from "../../components/UserCards/TransactionCard";
+import ActiveCardCard from "../../components/UserCards/ActiveCardCard";
+import ScoreCard from "../../components/UserCards/score";
+import './UserDashboard.css';
+import DashboardApi from "../../api/Dashboard";
+import { useNavigate } from "react-router-dom";
+import UserApi from "../../api/Users";
+import ScoreModal from "../../components/UserCards/ScoreModal";
+import CreditScoreSlot from "../../components/UserCards/score";
+import CreditScoreDash from "../../components/UserCards/CreditScoreDash";
+
+const UserDashboard = () => {
+    const [user, setUser] = useState('');
+    const [open, setOpen] = React.useState(null);
+    // NEW: State to manage the visibility of the card details
+    const [isCardDetailsVisible, setIsCardDetailsVisible] = useState(true);
+
+    const handleClose = () => {
+        setOpen(-1);
+    };
+
+    const handleOpen = (id) => {
+        setOpen(id);
+    };
+
+    // NEW: Function to toggle the card details visibility
+    const toggleCardVisibility = () => {
+        setIsCardDetailsVisible(prevState => !prevState);
+    };
+
+    // Navigate to Statements
+    const navigate = useNavigate();
+
+    const transactions = [
+        { date: "06/09",desc: "~~", amount: "+$2000" },
+        { date: "06/07", desc: "~~", amount: "-$100" },
+        { date: "06/02", desc: "~~", amount: "-$227" },
+        { date: "06/02", desc: "~~", amount: "+$523" },
+        { date: "06/01", desc: "~~", amount: "+$100" },
+        { date: "05/29", desc: "~~", amount: "+$71" },
+        { date: "05/29", desc: "~~", amount: "-$102" },
+        { date: "05/22", desc: "~~", amount: "+$2468" },
+        { date: "05/14", desc: "~~", amount: "+$124" },
+        { date: "05/14", desc: "~~", amount: "-$1025" },
+        { date: "05/12", desc: "~~", amount: "-$441" },
+    ];
+
+    useEffect(() => {
+        const getUser = async () => {
+            const res = await UserApi.getSelf();
+            const data = await res.json();
+            data.firstName = data.firstName.charAt(0).toUpperCase() + data.firstName.slice(1)
+            setUser(data);
+        };
+
+        getUser();
+    }, []);
+
+    return (
+        <div className="dashboard">
+            <h3>Welcome back, {user.firstName}!</h3>
+            <div className="main-layout">
+                {/* Left side */}
+                <div className="left-col">
+                    <div className="card-pair">
+                        <BalanceCard />
+                        {/* NEW: Conditionally render the ActiveCardCard based on state */}
+                        {isCardDetailsVisible && <ActiveCardCard />}
+                    </div>
+                    {/* NEW: Button to hide or show card details */}
+                    <div className="card-actions">
+                        <button className="dashboard-action-button" onClick={toggleCardVisibility}>
+                            {isCardDetailsVisible ? 'Hide Card Details' : 'Show Card Details'}
+                        </button>
+                    </div>
+                    <div className="button-panel">
+                        <TransactionCard transactions={transactions} />
+                        <div className="credit-score-container">
+                            <h2>FICO Score</h2>
+                            <CreditScoreDash credit_score={600}/>
+                            <button className="credit-button" onClick={() => handleOpen(user.id)}>Update Credit Score</button>
+                            <ScoreModal isOpen={open===user.id} id={user.id} onClose={handleClose} width="40%" height="45%">
+                                <CreditScoreSlot width={"100%"}/>
+                            </ScoreModal>
+                        </div>
+                    </div>
+                    {}
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default UserDashboard;
+
+
+/* --- PRE-EXISTING STYLES --- */
+body {
+    overflow: scroll;
+}
+
+.dashboard {
+    min-height: 100vh;
+    padding: 30px;
+    box-sizing: border-box;
+}
+
+.main-layout {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+}
+
+.left-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.card-pair {
+    display: flex;
+    flex-direction: row;
+    max-height: 400px;
+}
+
+.transaction-box {
+    width: 650px;
+    height: auto;
+}
+
+.button-panel {
+    margin-top: 3.5%;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+}
+
+.credit-score-container {
+    margin-top: 2.5%;
+    width: 600px;
+    height: 300px;
+}
+
+
+/* --- NEW & UPDATED STYLES --- */
+
+/* NEW: Container for the action button(s) below the cards */
+.card-actions {
+    width: 100%;
+    display: flex;
+    /* Aligns the button to the right, under the Active Card */
+    justify-content: flex-end; 
+    padding: 10px 0;
+    /* Adjust this value if your ActiveCardCard component has a different width */
+    max-width: 820px; 
+}
+
+/* NEW: Style for the new "Hide Card Details" button */
+.dashboard-action-button {
+    padding: 8px 16px;
+    background-color: #6c757d; /* A neutral grey */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background-color 0.2s ease-in-out;
+}
+
+.dashboard-action-button:hover {
+    background-color: #5a6268;
+}
+
+
+/* UPDATED: Updated credit-button for similar formatting */
+.credit-button {
+    margin-left: 30%;
+    display: flex;
+    justify-content: center;
+    
+    /* NEW styles for consistent look and feel */
+    padding: 10px 20px;
+    background-color: #007bff; /* Standard blue */
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.2s ease-in-out;
+    text-align: center;
+}
+
+.credit-button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
